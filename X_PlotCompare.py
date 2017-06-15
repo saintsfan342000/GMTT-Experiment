@@ -14,7 +14,7 @@ p.close('all')
 Used to compare these GM experiments to the standard TT experiment
 '''
 
-expts = n.array([7])
+expts = n.array([9])
 
 FS, SS = 19, 6
 savefigs = True
@@ -22,10 +22,14 @@ savefigs = True
 key = L('../ExptSummary.dat', delimiter=',')
 alpha, Rm,thickness, tube, material = key[ n.in1d(key[:,0],expts), [3,5,6,2,1]].ravel()
 
-oldkey = read_excel('../../AAA_TensionTorsion/TT-Summary.xlsx',sheetname='Summary',header=None,index_col=None,skiprows=1).values
-oldkey = oldkey[ ~n.in1d(oldkey[:,0], [10,36]) ]
-oldex = oldkey[ oldkey[:,1] == alpha, 0]
-oldth = oldkey[ oldkey[:,1] == alpha, 4]
+oldkey = read_excel('../../../AAA_TensionTorsion/TT-Summary.xlsx',sheetname='Summary',header=None,index_col=None,skiprows=1).values
+oldkey = oldkey[ ~n.in1d(oldkey[:,0], [10,36]) ] #Exlude a couple experiments
+if n.isnan(alpha):
+    oldex = oldkey[ n.isnan(oldkey[:,1]), 0]
+    oldth = oldkey[ n.isnan(oldkey[:,1]), 4]
+else:
+    oldex = oldkey[ oldkey[:,1] == alpha, 0]
+    oldth = oldkey[ oldkey[:,1] == alpha, 4]
 
 limloads = n.empty((len(oldex)+len(expts),4))
 stat2 = n.empty((len(oldex)+len(expts),4))
@@ -121,7 +125,7 @@ for G in range(len(expts)):
 
 for G in range(len(oldex)):
     
-    relpath  = '../../AAA_TensionTorsion/TT2-{:.0f}_FS{}SS{}'.format(oldex[G],FS,SS)
+    relpath  = '../../../AAA_TensionTorsion/TT2-{:.0f}_FS{}SS{}'.format(oldex[G],FS,SS)
             
     #########
     #Max.dat
