@@ -15,11 +15,11 @@ try:
     SS = int(SS)
     savefigs = True
 except ValueError:
-    expt = 9
+    expt = 12
     FS = 19
     SS = 6
     path = '../TTGM-{}_FS{}SS{}'.format(expt,FS,SS)
-    savefigs = True
+    savefigs = 1
 
 
 try:
@@ -28,7 +28,8 @@ except FileNotFoundError:
     os.chdir('TYPE PATH HERE')
 
 key = n.genfromtxt('{}/../ExptSummary.dat'.format(path), delimiter=',')
-alpha, Rm,thickness, tube, material = key[ key[:,0] == expt, [3,5,6,2,1]].flatten()
+alpha, Rm,thickness, tube, extype = key[ key[:,0] == expt, [3,5,6,2,1]].flatten()
+material = 6061
 
 if n.isnan(alpha):
     alpha = '$\\infty$'
@@ -72,8 +73,16 @@ for j in profStg:
 p.plot(DR[:,4],DR[:,2],'b',zorder=0)
 p.xlabel('$\\delta/\\mathsf{L}$')
 p.ylabel('$\\Sigma$\n$(\\mathsf{ksi})$')
-titlestring = 'TTGM-{:.0f}, $\\alpha$ = {}.  FS{:.0f}SS{:.0f}. Tube {:.0f}-{:.0f}'.format(expt,alpha,FS,SS,material,tube)
+
+if extype == 0:
+    titlestring = 'TTGM-{:.0f}, $\\alpha$ = {}.  FS{:.0f}SS{:.0f}. Tube {:.0f}'.format(expt,alpha,FS,SS,tube)
+elif extype == 1:
+    titlestring = 'TTGM-{:.0f}, $\\sigma\\rightarrow\\tau$ Corner, ($\\alpha$={}). FS{:.0f}SS{:.0f}. Tube {:.0f}'.format(expt,alpha,FS,SS,tube)
+elif extype == 1:
+    titlestring = 'TTGM-{:.0f}, $\\tau\\rightarrow\\sigma$ Corner, (\\alpha$={}). FS{:.0f}SS{:.0f}. Tube {:.0f}'.format(expt,alpha,FS,SS,tube)
+    
 p.title(titlestring,size=18)
+
 p.gcf().gca().set_ylim([0,1.2*n.max(STF[:,2])])
 p.gcf().gca().set_xlim(left=0)
 

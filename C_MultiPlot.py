@@ -33,7 +33,8 @@ FS, SS = 19, 6
 savefigs = True
 
 key = n.genfromtxt('../ExptSummary.dat', delimiter=',')
-# [0]Expt No., [1]Material, [2]Tube No., [3]Alpha, [4]Alpha-True, [5]Mean Radius, [6]Thickness, [7]Eccentricity
+# [0]Expt No., [1]Expt Type, [2]Tube No., [3]Alpha, [4]Alpha-True, [5]Mean Radius, [6]Thickness, [7]Eccentricity
+# Type:  0=Radial, 1=Sigma-Tau Corner, 2=Tau-Sigma Corner
 
 # Figure out if I've specifided alpha or expteriment
 if (len(expts) >= 1) and (alpha == ...) :
