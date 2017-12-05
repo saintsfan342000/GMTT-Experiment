@@ -14,13 +14,13 @@ from CircleFitByPratt import PrattPlotter
 import os, glob, shutil, sys
 
 '''
-For analysis of pure shear DIC Data (TTGM-8)
+For analysis of pure shear DIC Data (TTGM-8 and 11)
 Quite a bit different in that there is no localization to study here.
 Averages over three ranges:  +/- .05", .1", and .2" (saving into d_05, d_10, d_20)
 Also interpolates and saves the interpolated circumferential surface at mid-length (for buckling analysis)
 '''
 
-proj = 'TTGM-8_FS32SS8'
+proj = 'TTGM-11_FS32SS8'
     
 BIN = True
 makecontours = True
@@ -154,7 +154,9 @@ def d_analsis(Lg, d):
     Atemp = A[rng]
     xspace = n.linspace(A[rng,2].min()+.01,A[rng,2].max()-.01,len(n.unique(A[rng,0])))
     dtop, dbot = griddata( Atemp[:,[2,3]], Atemp[:,6], (xspace[None,:],array([[Lg],[-Lg]])), method='linear')
-    d[k, 10] = (dtop.mean()-dbot.mean())/(2*Lg) - 1
+    #d[k, 10] = (dtop.mean()-dbot.mean())/(2*Lg) - 1
+    # Bug fix 9/5/17?
+    d[k, 9] = (dtop.mean()-dbot.mean())/(2*Lg) - 1
   
 ######################
 # Iterate Thru Stage #
@@ -242,12 +244,14 @@ n.savetxt('d_20.dat', X=d_20,
           header=header1+header0)
 
 # xzinterps could all be different lengths
+'''
 minlen = min([len(i[:,0]) for i in xzinterp])
 for i in range(last+1):
     xzinterp[i] = xzinterp[i][:minlen]
 xzinterp = array(xzinterp).reshape(-1, 2*(last+1))
+'''
 header = ('Interpolated deformed xz coords along y = 0 for buckling study\n' +
           'Column 2*k is kth stage deformed x-coord\n' + 
           'Column 2*k+1 is the kth stage deformed z-coord')
-n.savetxt('XZInterp.dat', X=xzinterp, fmt='%.6f', delimiter=', ')
+n.savetxt('XZInterp.dat', X=xzinterp, fmt='%.6f', delimiter=', ', header=header)
 

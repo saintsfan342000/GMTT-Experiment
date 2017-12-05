@@ -30,6 +30,10 @@ if n.isnan(alpha):
 else:
     oldex = oldkey[ oldkey[:,1] == alpha, 0]
     oldth = oldkey[ oldkey[:,1] == alpha, 4]
+    # Special for alpha 0.75 TT2-26
+    loc = (oldex == 26)
+    oldex = oldex[~loc]
+    oldkey = oldkey[~loc]
 
 limloads = n.empty((len(oldex)+len(expts),4))
 stat2 = n.empty((len(oldex)+len(expts),4))

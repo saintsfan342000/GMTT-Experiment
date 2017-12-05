@@ -22,9 +22,10 @@ try:
         alpha = ...
         expts = n.array(argv).astype(int)
     else:
-        raise
+        raise ValueError('Command line args invalid')
 except:
-    expts = n.array([1,2,3,4,5,7,8,9])
+    expts = n.array([1,2,3,4,5,7,9,10,11])
+    savepath = '..'
     alpha = ...
 
 
@@ -40,7 +41,7 @@ if (len(expts) >= 1) and (alpha == ...) :
     expinfo = key[ n.in1d(key[:,0], expts), :][:,[0,3,2,6,4,7]]
     savepath = '../ComparisonFigs/PaperSet'.format(alpha)
 elif (type(alpha) in [int,float]) and (len(expts)==0):
-    expinfo = key[ key[:,1]==alpha,: ][:,[0,3,2,6,4,7]]
+    expinfo = key[ key[:,3]==alpha,: ][:,[0,3,2,6,4,7]]
     savepath = '../ComparisonFigs/Alpha-{}'.format(alpha)
     if n.isnan(alpha):
         expinfo = key[ n.isnan(key[:,1]),: ][:,[0,3,2,6,4,7]]
@@ -48,7 +49,6 @@ elif (type(alpha) in [int,float]) and (len(expts)==0):
 else:
     raise ValueError('expts must be empty array OR alpha must be ellipsis')
 
-savepath = '..'
     
 # If I have just one expt, flatten the expinfo array
 # otherwise, just order them w.r.t. alpha
@@ -66,14 +66,13 @@ else:
     limloads = n.empty( (len(expts),4) ) #Force, torque, disp, rot
     stat2 = n.empty_like(limloads)
     
-    
 if (savefigs == True) and not (os.path.exists(savepath)):
     os.mkdir(savepath)
 
 for G in range(len(expts)):
     
     relpath  = '../TTGM-{}_FS{}SS{}'.format(expts[G],FS,SS)
-    if expts[G] == 8:
+    if expts[G] in [8,11]:
         relpath  = '../TTGM-{}_FS{}SS{}/StandardAnalysis'.format(expts[G],32,8)
             
     #########
@@ -114,9 +113,7 @@ for G in range(len(expts)):
     if G == 0:
         p.style.use('mysty-sub')
         #p.rcParams['axes.prop_cycle'] = p.cycler('color',colors)
-        fig1 =  p.figure(1,facecolor='w',figsize=(8,12))
-        ax11 = fig1.add_subplot(2,1,1)
-        ax12 = fig1.add_subplot(2,1,2)
+        fig1, ax11, ax12 = ff.make21()
     
     if n.isnan(expinfo[G,1]):
         masterlabel = '{:.0f}; $\\infty$ ; {:.0f}'.format(expts[G],expinfo[G,2])
@@ -149,10 +146,7 @@ for G in range(len(expts)):
         ax12.set_xlim(left=0)
         l1 = ax12.legend([m22,m21],["Station 2", "LL"],loc='upper left',numpoints=1,fontsize=10,frameon=False)
         p.setp(l1.get_texts(),color='r')
-        l2 = ax12.legend(loc='lower right',fontsize=10,title='Expt; $\\alpha$; Tube')
-        l2 = ax12.legend(l2.get_lines()[::-1],[i.get_text() for k,i in enumerate(l2.get_texts()[::-1])],fontsize=10,title='Expt; $\\alpha$; Tube',loc='lower right')
-        [i.set_color(l2.get_lines()[k].get_color()) for k,i in enumerate(l2.get_texts())]
-        p.setp(l2.get_title(), fontsize=l2.get_texts()[0].get_fontsize() )
+        l2 = ff.ezlegend(ax12, loc='lower right',title='Expt; $\\alpha$; Tube', fontsize=10)
         ax12.add_artist(l1)
         
         ff.myax(ax11,ff.ksi2Mpa,'$\\Sigma$\n$(\\mathsf{MPa})$')
@@ -164,9 +158,7 @@ for G in range(len(expts)):
     if G == 0:
         p.style.use('mysty-sub')
         #p.rcParams['axes.prop_cycle'] = cycler('color',colors)
-        fig2 = p.figure(2,facecolor='w',figsize=(8,12) )
-        ax21 = fig2.add_subplot(2,1,1)
-        ax22 = fig2.add_subplot(2,1,2)
+        fig2, ax21, ax22 = ff.make21()
     
     ax21.plot(abs(dmean[:,7]),dmean[:,6],'o',ms=4,mfc=mastercolor,mec='none',label=masterlabel)
     ax21.plot(abs(dmax[-1,6]),dmax[-1,5],'s',ms=8,mfc=mastercolor,mec='none')
@@ -213,8 +205,7 @@ for G in range(len(expts)):
         p.setp(l3.get_frame(),lw=0)
         #ax3.yaxis.set_ticks(n.arange(-.024,0+.004,.004))
         ax3.axis(xmin=-1,xmax=1,ymax=.002)
-        
-        ff.myax(ax3,TW=.002,HW=.3,HL=.05,OH=.2)
+        ff.myax(ax3,autoscale='preserve')
         
     ##################################################
     # Figure 5 - Radial contraction at LL
@@ -238,8 +229,7 @@ for G in range(len(expts)):
         p.setp(l3.get_frame(),lw=0)
         #ax5.yaxis.set_ticks(n.arange(-.024,0+.004,.004))
         ax5.axis(xmin=-1,xmax=1,ymax=.002)
-        
-        ff.myax(ax5,TW=.002,HW=.3,HL=.05,OH=.2)
+        ff.myax(ax5,autoscale='preserve')
         
            
     ##################################################
@@ -319,7 +309,8 @@ for G in range(len(expts)):
         ax7.axis(xmin=0,ymin=0)
         ax7.set_xlabel('$\\phi^\\circ$')
         ax7.set_ylabel('$\\mathsf{e}^{\\mathsf{p}}_{\\mathsf{e}}$')
-        leg7_2 = ax7.legend([LL7,ENDmax7],[LL.get_label(),ENDmax.get_label()],loc='upper left')
+        ENDmaxdummy, = ax7.plot([],[],'rx',ms=10,mew=2)
+        leg7_2 = ax7.legend([LL7,ENDmaxdummy],[LL.get_label(),ENDmax.get_label()],loc='upper left')
         p.setp(leg7_2.get_texts(),color='r')
         p.setp(leg7_2.get_lines(),color='r')
         p.setp(leg7_2.get_lines(),mec='r')
@@ -332,8 +323,8 @@ for G in range(len(expts)):
 if not savefigs:
     p.show('all')        
 else:
-    fig1.savefig('{}/1 - Sts-Delta-Rot.png'.format(savepath),dpi=125)
-    #fig1.savefig('{}/1 - Sts-Delta-Rot.pdf'.format(savepath),dpi=125)
+    fig1.savefig('{}/1 - Sts-Delta-Rot.png'.format(savepath),dpi=125, bbox_inches='tight')
+    #fig1.savefig('{}/1 - Sts-Delta-Rot.pdf'.format(savepath),dpi=125, bbox_inches='tight')
     fig2.savefig('{}/2 - StrainPath.png'.format(savepath),dpi=125,bbox_inches='tight')
     #fig2.savefig('{}/2 - StrainPath.pdf'.format(savepath),dpi=125,bbox_inches='tight')
     fig3.savefig('{}/3 - RadialContraction.png'.format(savepath),dpi=125,bbox_inches='tight')
