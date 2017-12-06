@@ -18,13 +18,17 @@ try:
         # we only have alpha!
         alpha = float(argv[0])
         expts = n.array([])
+        savepath = '../ComparisonFigs/Alpha-{}'.format(alpha)
+        if n.isnan(alpha):
+            savepath = '../ComparisonFigs/Alpha-Inf'
     elif len(argv)>1:
         alpha = ...
         expts = n.array(argv).astype(int)
+        savepath = '../ComparisonFigs/PaperSet'.format(alpha)
     else:
         raise ValueError('Command line args invalid')
 except:
-    expts = n.array([1,2,3,4,5,7,9,10,11])
+    expts = n.array([1,2,3,4,5,7,9,10,11,12])
     savepath = '..'
     alpha = ...
 
@@ -40,10 +44,8 @@ key = n.genfromtxt('../ExptSummary.dat', delimiter=',')
 if (len(expts) >= 1) and (alpha == ...) :
     #expt, alpha, tube no, thickness, true alpha, ecc
     expinfo = key[ n.in1d(key[:,0], expts), :][:,[0,3,2,6,4,7]]
-    savepath = '../ComparisonFigs/PaperSet'.format(alpha)
 elif (type(alpha) in [int,float]) and (len(expts)==0):
     expinfo = key[ key[:,3]==alpha,: ][:,[0,3,2,6,4,7]]
-    savepath = '../ComparisonFigs/Alpha-{}'.format(alpha)
     if n.isnan(alpha):
         expinfo = key[ n.isnan(key[:,1]),: ][:,[0,3,2,6,4,7]]
         savepath = '../ComparisonFigs/Alpha-Inf'.format(alpha)

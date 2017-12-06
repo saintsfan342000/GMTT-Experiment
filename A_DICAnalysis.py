@@ -31,8 +31,8 @@ Requires a file ArSTF, which is the Aramis stage, force, time output. (or stage,
 This is used for the interpolation of the Labview data.
 **
 '''
-proj = 'TTGM-9_FS19SS6'
-BIN = False
+proj = 'TTGM-10_FS19SS6'
+BIN = True
 makecontours = True
 saveAram = True                      # Whether to save the missing removed array to a .npy binary.  Only does so if BIN = False
 
@@ -58,11 +58,12 @@ else:
 savepath = '../{}'.format(proj)
 saveprefix = '{}_'.format(proj)          #Prefix for the npy files
 
+# [0]Expt No., [1]Expt Type, [2]Tube No., [3]Alpha, [4]Alpha-True, [5]Mean Radius, [6]Thickness, [7]Eccentricity
 key = n.genfromtxt('{}/../ExptSummary.dat'.format(savepath), delimiter=',')
 if not (expt in key[:,0]):
     raise ValueError('You need to update the experiment summary!')
 else:
-    alpha, Rm,thickness, tube, material = key[ key[:,0] == expt, [3,5,6,2,1]].flatten()
+    extype, worthless, alpha, worthless, Rm, thickness = key[ key[:,0] == expt, 1:7].flatten()
 
 os.chdir(savepath)
 Size_Scott = 1/16 #[in]
@@ -90,6 +91,17 @@ if not os.path.exists('STF.dat'):
 else:
     STF = n.loadtxt('STF.dat',delimiter=',')    
     last = int(STF[-1,0])
+
+# Type:  0=Radial, 1=Sigma-Tau Corner, 2=Tau-Sigma Corner
+if extype == 0:
+    # Radial:  Start filtering immediately
+    filter_start = 0
+elif extype == 1:
+    # Sig-->Tau :  Use rotation to set fiilter start
+    filter_start = n.nonzero(STF[:,-1] >= STF[:,-1].max()*.1 )[0][0]
+elif extype == 2:
+    # Tau-->Sig  Use displacement
+    filter_start = n.nonzero(STF[:,-2] >= STF[:,-2].max()*.1 )[0][0]
 
 ###########################################################################
 # Make the contour in which we select the area we analyze
@@ -312,7 +324,12 @@ for k in range(last,-1,-1):
         ratio = NEy / gamma
         ratioAvg = nanmean(ratio)
         ratioSDEV = nanstd(ratio)
-        passed = (ratio >= ratioAvg - 0.5 * ratioSDEV) & (ratio <= ratioAvg + 0.5 * ratioSDEV)
+        if k >= filter_start:
+            # Then filter
+            passed = (ratio >= ratioAvg - 0.5 * ratioSDEV) & (ratio <= ratioAvg + 0.5 * ratioSDEV)
+        else:
+            # Otherwise, don't bother filtering
+            passed = n.ones_like(ratio, dtype=bool)
         LEp=LEp[passed]
         NEx=NEx[passed]
         NEy=NEy[passed]
