@@ -15,7 +15,7 @@ try:
     SS = int(SS)
     savefigs = True
 except ValueError:
-    expt = 12
+    expt = 15
     FS = 19
     SS = 6
     path = '../TTGM-{}_FS{}SS{}'.format(expt,FS,SS)
@@ -30,6 +30,8 @@ except FileNotFoundError:
 key = n.genfromtxt('{}/../ExptSummary.dat'.format(path), delimiter=',')
 alpha, Rm,thickness, tube, extype = key[ key[:,0] == expt, [3,5,6,2,1]].flatten()
 material = 6061
+
+print(extype)
 
 if n.isnan(alpha):
     alpha = '$\\infty$'
@@ -77,9 +79,9 @@ p.ylabel('$\\Sigma$\n$(\\mathsf{ksi})$')
 if extype == 0:
     titlestring = 'TTGM-{:.0f}, $\\alpha$ = {}.  FS{:.0f}SS{:.0f}. Tube {:.0f}'.format(expt,alpha,FS,SS,tube)
 elif extype == 1:
-    titlestring = 'TTGM-{:.0f}, $\\sigma\\rightarrow\\tau$ Corner, ($\\alpha$={}). FS{:.0f}SS{:.0f}. Tube {:.0f}'.format(expt,alpha,FS,SS,tube)
-elif extype == 1:
-    titlestring = 'TTGM-{:.0f}, $\\tau\\rightarrow\\sigma$ Corner, (\\alpha$={}). FS{:.0f}SS{:.0f}. Tube {:.0f}'.format(expt,alpha,FS,SS,tube)
+    titlestring = 'TTGM-{:.0f}, $\\Sigma\\rightarrow\\mathcal{{T}}$ Corner, ($\\alpha$={}). FS{:.0f}SS{:.0f}. Tube {:.0f}'.format(expt,alpha,FS,SS,tube)
+elif extype == 2:
+    titlestring = 'TTGM-{:.0f}, $\\mathcal{{T}}\\rightarrow\\Sigma$ Corner, ($\\alpha$={}). FS{:.0f}SS{:.0f}. Tube {:.0f}'.format(expt,alpha,FS,SS,tube)
     
 p.title(titlestring,size=18)
 

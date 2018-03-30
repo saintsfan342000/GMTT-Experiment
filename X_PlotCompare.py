@@ -17,7 +17,7 @@ If comparing GM radials and corners, then the experiments
 Sig-Tau tested and verified to work
 '''
 
-expts = n.array([12])
+expts = n.array([16])
 
 FS, SS = 19, 6
 savefigs = True
@@ -28,25 +28,23 @@ extype, tube, alpha, alpha_true, Rm, thickness = key[ n.in1d(key[:,0],expts), 1:
 if extype == 0:
     # Compare radial GM to radial TT2
     oldkey = read_excel('../../../AAA_TensionTorsion/TT-Summary.xlsx',sheetname='Summary',header=None,index_col=None,skiprows=1).values
-    oldkey = oldkey[ ~n.in1d(oldkey[:,0], [10,36]) ] #Exlude a couple experiments
+    oldkey = oldkey[ ~n.in1d(oldkey[:,0], [10,26,36]) ] #Exlude a couple TT2 experiments
     if n.isnan(alpha):
         oldex = oldkey[ n.isnan(oldkey[:,1]), 0]
         oldth = oldkey[ n.isnan(oldkey[:,1]), 4]
     else:
         oldex = oldkey[ oldkey[:,1] == alpha, 0]
         oldth = oldkey[ oldkey[:,1] == alpha, 4]
-        # Special for alpha 0.75 TT2-26
-        loc = (oldex == 26)
-        oldex = oldex[~loc]
-        oldkey = oldkey[~loc]
 elif extype == 1:
     # Sig-->Tau. Find all GM radials and Tau-Sigs
     oldex = key[ (key[:,3] == alpha) & n.in1d(key[:,1], [0,2]), 0].astype(int)
     oldth =  key[ (key[:,3] == alpha) & n.in1d(key[:,1], [0,1]), 6]
-elif extype == 2:
+    oldtype = key[ (key[:,3] == alpha) & n.in1d(key[:,1], [0,1]), 1]
+elif extype == 2: 
     # Tau-->Sig.  Fina all GM radials and Sig-Taus
     oldex = key[ (key[:,3] == alpha) & n.in1d(key[:,1], [0,1]), 0].astype(int)
     oldth =  key[ (key[:,3] == alpha) & n.in1d(key[:,1], [0,1]), 6]
+    oldtype =  key[ (key[:,3] == alpha) & n.in1d(key[:,1], [0,1]), 1]
     
 
 limloads = n.empty((len(oldex)+len(expts),4))
@@ -98,9 +96,12 @@ for G in range(len(expts)):
         fig1 =  p.figure(1,facecolor='w',figsize=(8,12))
         ax11 = fig1.add_subplot(2,1,1)
         ax12 = fig1.add_subplot(2,1,2)
-    
-    LINE, = ax11.plot(DR[:,4],DR[:,2],label = 'TTGM-{}'.format(expts[G]))
-    masterlabel = LINE.get_label()
+    masterlabel = 'TTGM-{}'.format(expts[G])
+    if extype == 1:
+        masterlabel += '\n$\\Sigma\\rightarrow\\mathcal{T}$'
+    elif extype == 2:
+        masterlabel += '\n$\\mathcal{T}\\rightarrow\\Sigma$'    
+    LINE, = ax11.plot(DR[:,4],DR[:,2],label=masterlabel)
     mastercolor=LINE.get_color()
     ax12.plot(DR[:,5],DR[:,3],label=masterlabel)
     
@@ -157,8 +158,18 @@ for G in range(len(oldex)):
    
     if extype == 0:
         relpath  = '../../../AAA_TensionTorsion/TT2-{:.0f}_FS{}SS{}'.format(oldex[G],FS,SS)
+        # If current extype is zero, then we're comparing to TT2
+        masterlabel = 'TT2-{:.0f}'.format(oldex[G]) 
     elif extype in [1,2]:
+        # Then we're comparing to TTGMs
         relpath = '../TTGM-{}_FS{}SS{}'.format(oldex[G],FS,SS)
+        masterlabel = 'TTGM-{}'.format(oldex[G])
+        if oldtype[G] == 0:
+            masterlabel += '\n$\\Sigma=\\alpha\\mathcal{T}$'
+        elif oldtype[G] == 1:
+            masterlabel += '\n$\\Sigma\\rightarrow\\mathcal{T}$'
+        elif oldtype[G] == 2:
+            masterlabel += '\n$\\mathcal{T}\\rightarrow\\Sigma$'          
             
     #########
     #Max.dat
@@ -191,10 +202,7 @@ for G in range(len(oldex)):
     ##################################################
     # Figure 1 - AxSts-Delta and ShearSts-Rot
     ##################################################
-    if extype == 0:
-        masterlabel = 'TT2-{:.0f}'.format(oldex[G])
-    elif extype in [1,2]:
-        masterlabel = 'TTGM-{:.0f}'.format(oldex[G])
+        
     LINE, = ax11.plot(DR[:,4],DR[:,2],label=masterlabel)
     mastercolor=LINE.get_color()
     ax12.plot(DR[:,5],DR[:,3],label=masterlabel)
@@ -239,15 +247,13 @@ for G in range(len(oldex)):
         ax21.set_ylabel('$\\epsilon_y$')
         ax21.set_ylim(bottom=0)
         ax21.set_xlim(left=0)
-        l2 = ax21.legend(loc='center left',bbox_to_anchor=(1.01,.5),fontsize=10,numpoints=1,handletextpad=.1)
-        p.setp(l2.get_title(),fontsize=10)
+        l2 = ff.ezlegend(ax21, markers=True)
         ax22.set_title('Mean strain path; Haltom 2013 Definitions',fontsize=14)
         ax22.set_xlabel('$\\gamma = atan(\\mathsf{F}_{\\mathsf{01}}/\\mathsf{F}_{\\mathsf{11}}$)')
         ax22.set_ylabel('$\\epsilon_{\\mathsf{y}}$\n$\\mathsf{F}_{\\mathsf{11}}-\\mathsf{1}$')
         ax22.set_ylim(bottom=0)
         ax22.set_xlim(left=0)
-        l2 = ax22.legend(loc='center left',bbox_to_anchor=(1.01,.5),fontsize=10,numpoints=1,handletextpad=.1)
-        p.setp(l2.get_title(),fontsize=10)
+        l2 = ff.ezlegend(ax22, markers=True)
         ff.myax(ax21)
         ff.myax(ax22)
 
@@ -300,7 +306,7 @@ for G in range(len(oldex)):
                 ll, = ax5.plot(tll,sll,'r^',ms=6)
                 fa, = ax5.plot(tf,sf,'rs',ms=6)
             ax5.set_title('Stress Path')
-            ax5.axis(xmin=-2,ymin=-2)
+            ax5.axis(xmin=-1,ymin=-1)
             ax5.set_xlabel('$\\mathcal{T}$ (ksi)')
             ax5.set_ylabel('$\\Sigma$\n(ksi)')
             leg5_2 = ax5.legend([ll,fa],['LL','Fail'],loc='lower right')

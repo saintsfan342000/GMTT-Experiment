@@ -31,9 +31,9 @@ Requires a file ArSTF, which is the Aramis stage, force, time output. (or stage,
 This is used for the interpolation of the Labview data.
 **
 '''
-proj = 'TTGM-10_FS19SS6'
-BIN = True
-makecontours = True
+proj = 'TTGM-16_FS19SS6'
+BIN = False
+makecontours = False
 saveAram = True                      # Whether to save the missing removed array to a .npy binary.  Only does so if BIN = False
 
 ArSTF_timecol = 2  # The column in the ArSTF containing stage time...either 1 or 2 depending on whether F is force or torque...sometimes it changes.
@@ -176,7 +176,15 @@ FS_th = FS / SS * (min_disp/thickness)
 size_av = Size_Scott - thickness * FS_th
 
 #Stage Time Force data...Create the 10 stations at which we'll plot profiles
-LL = n.max(n.argmax(STF[:,2:4], axis=0))
+if extype == 0:
+    # Radial:  Take later of Fmax, Tmax
+    LL = n.max(n.argmax(STF[:,2:4], axis=0))
+elif extype == 1:
+    # Sig-->Tau:  Take Tmax
+    LL = STF[:,3].argmax()
+elif extype == 2:
+    # Tau-->Sig:  Take Fmax
+    LL = STF[:,2].argmax()
 # For TTGM-4
 if expt == 4:
     LL = n.nonzero(STF[:,0]==519)[0][0]
@@ -185,25 +193,29 @@ if not os.path.exists('prof_stages.dat'):
     #[0]Stg [1]Time [2]AxSts [3]ShSts [4]AxForce [5]Torque [6]MTS Disp [7]MTS Rot
     TRFD = read_csv('STF.dat',sep=',',comment='#',header=None,index_col=None).values[:,[5,7,4,6]]
     p.figure()
-    p.plot(TRFD[:,1],TRFD[:,0])
-    p.plot(TRFD[LL,1],TRFD[LL,0],'ro',ms=10)
+    if extype in [0,1]:
+        x, y = TRFD[:,1].copy(),TRFD[:,0].copy()
+    else:
+        x, y = TRFD[:,3].copy(),TRFD[:,2].copy()
+    p.plot(x,y)
+    p.plot(x[LL],y[LL],'ro',ms=10)
     p.title('Click where the first\ncalc stage will be', fontsize=30)
     #p.axis([0,1.1*TRFD[-1,1],0,1.2*n.max(TRFD[:,0])])
-    p.gca().set_ylim([0,1.2*n.max(TRFD[:,0])])
+    p.gca().set_ylim([0,1.2*n.max(y)])
     p.gca().set_xlim(left=0)
     yldrot = n.asarray(p.ginput(1)).flatten()[0]
     p.close()
 
     # Make evenly spaced increments
-    for i in range(len(TRFD[:,1])):
-        if TRFD[i,1] >= yldrot:
+    for i in range(len(x)):
+        if x[i] >= yldrot:
             break
 
     #Two before the limit load, seven after
-    x = hstack( (n.linspace(yldrot,TRFD[LL,1],3)[0:2], n.linspace(TRFD[LL,1],TRFD[-1,1],8)) )
-    profStg = n.empty(len(x))
-    for i in range(len(x)):
-        profStg[i] = n.where(TRFD[:,1]>=x[i])[0][0]
+    D = hstack( (n.linspace(yldrot,x[LL],3)[0:2], n.linspace(x[LL],x[-1],8)) )
+    profStg = n.empty(len(D))
+    for i in range(len(D)):
+        profStg[i] = n.where(x>=D[i])[0][0]
         
     headerline = 'Stages at which profiles were generated'
     n.savetxt('prof_stages.dat',X=profStg[None,:],fmt='%.0f',delimiter=', ',header=headerline)

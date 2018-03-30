@@ -28,7 +28,7 @@ try:
     else:
         raise ValueError('Command line args invalid')
 except:
-    expts = n.array([1,2,3,4,5,7,9,10,11,12])
+    expts = n.array([1,2,3,4,5,7,9,10,11,12,13,14])
     savepath = '..'
     alpha = ...
 
@@ -101,7 +101,10 @@ for G in range(len(expts)):
     dscot = L('{}/like_Scott.dat'.format(relpath),delimiter=',')
     DR = L('{}/disp-rot.dat'.format(relpath),delimiter=',')
     #'[0]Stage [1]Time [2]AxSts [3]ShSts [4]Delta/L [5]Phi. Lg = {:.6f} inch'
-    limloads[G] = DR[int(profStg[2]),2:]
+    if expts[G] == 16:
+        limloads[G] = DR[int(profStg[-2]),2:]
+    else:
+        limloads[G] = DR[int(profStg[2]),2:]
     stat2[G] = DR[int(profStg[1]),2:]
     profLEp = L('{}/StrainProfiles.dat'.format(relpath),delimiter=',')[1:]
     profUr = L('{}/RadialContraction.dat'.format(relpath),delimiter=',')[1:]
@@ -266,7 +269,9 @@ for G in range(len(expts)):
     if expts[G] != 8:
         sig, tau = dmax[profStg[2]][2:4]
         triax = (sig/2)/n.sqrt(.75*(sig**2+4*tau**2))
-        LL, = ax6.plot(triax, dmean[profStg[2],10],'bs',mec='b',label='LL')
+        # Aieesh...more exceptions for special experiments
+        loc=2 if (expts[G]!=16) else -2
+        LL, = ax6.plot(triax, dmean[profStg[loc],10],'bs',mec='b',label='LL')
         sig, tau = dmax[profStg[-1]][2:4]
         triax = (sig/2)/n.sqrt(.75*(sig**2+4*tau**2))
         ENDmean, = ax6.plot(triax, dmean[profStg[-1],11],'gs',mec='g',label='$\\bar{\\mathsf{e}}_{\\mathsf{ef}}^\\mathsf{p}$')
@@ -306,7 +311,8 @@ for G in range(len(expts)):
         ax7 = fig7.gca()
     
     path, = ax7.plot(DR[:,5],dmean[:,11],'o',ms=4,color=mastercolor,mfc=mastercolor,mec='none',label=masterlabel)
-    LL7, = ax7.plot(DR[profStg[2],5],dmean[profStg[2],11],'rs',ms=6,color='r',mfc='r',mec='r')
+    loc=2 if (expts[G]!=16) else -2
+    LL7, = ax7.plot(DR[profStg[loc],5],dmean[profStg[loc],11],'rs',ms=6,color='r',mfc='r',mec='r')
     ENDmax7, = ax7.plot(DR[-1,5],dmax[profStg[-1],10],'x',ms=10,mew=2,color=mastercolor,mec=mastercolor)
     if G == len(expts) - 1:
         ax7.axis(xmin=0,ymin=0)
