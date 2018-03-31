@@ -11,14 +11,9 @@ from sys import argv
 from scipy.io import savemat
 
 expt = argv[1]
-proj = 'TT2-{}_FS19SS6'.format(expt)
+proj = 'TTGM-{}_FS19SS6'.format(expt)
 print('\n')
 print(proj)
-
-if expt == '18':
-    alpha = n.nan
-else:
-    alpha = 2.0
 
 expt = int( proj.split('_')[0].split('-')[1])
 FS = int( proj.split('_')[1].split('SS')[0].split('S')[1] )
@@ -26,6 +21,9 @@ SS = int( proj.split('_')[1].split('SS')[1] )
 arampath = '../{}/AramisBinary'.format(proj)
 prefix = '{}_'.format(proj)
 savepath = '../{}'.format(proj)
+
+key = n.genfromtxt('../ExptSummary.dat', delimiter=',')
+alpha = key[ key[:,0] == int(expt), 3 ]
 
 os.chdir(savepath)
 

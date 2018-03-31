@@ -10,24 +10,29 @@ import os
 Plots published values and ONLY Kelin's incremental values, pt-to-pt and averaged
 '''
 max_or_mean = 'max'
-expts = n.array([ 31,   35, 20, 22,  24, 17, 27,   34,  32,   9,  30,  16, 15, 18])#, 12, 13, 14, 15])
-alpha = n.array([.25, .375, .5, .5, .75,  1,  1, 1.25, 1.5, 2.0, 3.0, 3.5, 4.0, n.nan])
-#expts = n.array([2,12,13,3,14,15])
+
+key = n.genfromtxt('../ExptSummary.dat', delimiter=',')
+key = key[ key[:,3] != 0 ]
+key = key[ key[:,1] == 0 ]
+expt = key[:,0].astype(int)
+alpha = key[:,3]
+
+#expt = n.array([2,12,13,3,14,15])
 # [0]Expt No., [1]Expt Type, [2]Tube No., [3]Alpha, [4]Alpha-True, 
 # [5]Mean Radius, [6]Thickness, [7]Eccentricity
 # Type:  0=Radial, 1=Sigma-Tau Corner, 2=Tau-Sigma Corner
 
-for k, (x,alp) in enumerate(zip(expts,alpha)):
+for k, (x,alp) in enumerate(zip(expt,alpha)):
 
     # [0]Stage [1]Time [2]AxSts [3]ShSts [4]Delta/L [5]Phi. Lg = 0.657804 inch
-    rot = n.genfromtxt('../TT2-{}_FS19SS6/disp-rot.dat'.format(x), delimiter=',', usecols=(5))
+    rot = n.genfromtxt('../TTGM-{}_FS19SS6/disp-rot.dat'.format(x), delimiter=',', usecols=(5))
     # [0]Stage, [1]AvgF-All in Box-VM, [2]H8, [3]AvgF-Passing-VM, [4]H8, [5]Passing P2P-VM, [6]H8, [7]MaxPt-VM, [8]H8
-    e = n.genfromtxt('../TT2-{}_FS19SS6/IncrementalStrain.dat'.format(x), delimiter=',')
+    e = n.genfromtxt('../TTGM-{}_FS19SS6/IncrementalStrain.dat'.format(x), delimiter=',')
     # # [0]Stage [1]Time [2]NumPtsPassed [3]AxSts [4]ShSts [5]NEx 
     # [6]NEy [7]Gamma [8]F11-1 [9]F22-1 [10]atan(F12/F22) [11]epeq
-    sig, tau, dmean = n.genfromtxt('../TT2-{}_FS19SS6/mean.dat'.format(x), 
+    sig, tau, dmean = n.genfromtxt('../TTGM-{}_FS19SS6/mean.dat'.format(x), 
             delimiter=',', usecols=(3,4,11), unpack=True)
-    dmax = n.genfromtxt('../TT2-{}_FS19SS6/MaxPt.dat'.format(x))[:,-1]
+    dmax = n.genfromtxt('../TTGM-{}_FS19SS6/MaxPt.dat'.format(x))[:,-1]
     
     if n.isnan(alp):
         masterlabel = '{:.0f}; $\\infty$ '.format(x)
@@ -54,7 +59,7 @@ for k, (x,alp) in enumerate(zip(expts,alpha)):
     if max_or_mean == 'mean':
         line3, = ax0.plot(rot, e[:,3], ':', color=master.get_color())
 
-    if x == expts[-1]:
+    if x == expt[-1]:
         ax0.axis(xmin=0, ymin=0)
         ax0.set_title('M{} Strain vs Rotation'.format(max_or_mean[1:]))
         ax0.set_xlabel('$\\phi^\\circ$')
@@ -86,7 +91,7 @@ for k, (x,alp) in enumerate(zip(expts,alpha)):
     else:
         tx = ax1.text(triax,1.8,'{}'.format(alp),
                 color=master.get_color(),ha='center',va='top',size=10)
-    if x == expts[-1]:
+    if x == expt[-1]:
         ax1.axis([0,0.6,0,1.8])
         ax1.set_xlabel('$\\sigma_{\\mathsf{m}}/\\sigma_{\\mathsf{e}}$')
         ax1.set_ylabel('$\\mathsf{e}^{\\mathsf{p}}_{\\mathsf{e}}$')
