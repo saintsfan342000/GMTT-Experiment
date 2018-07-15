@@ -12,6 +12,7 @@ import numexpr as ne
 from pandas import read_excel, read_csv
 from mysqrtm import mysqrtm
 import os, glob, shutil
+from scipy.io import savemat
 
 '''
 
@@ -31,10 +32,11 @@ Requires a file ArSTF, which is the Aramis stage, force, time output. (or stage,
 This is used for the interpolation of the Labview data.
 **
 '''
-proj = 'TTGM-16_FS19SS6'
+proj = 'TTGM-7_FS32SS8'
 BIN = False
-makecontours = False
+makecontours = True
 saveAram = True                      # Whether to save the missing removed array to a .npy binary.  Only does so if BIN = False
+savePassing = True
 
 ArSTF_timecol = 2  # The column in the ArSTF containing stage time...either 1 or 2 depending on whether F is force or torque...sometimes it changes.
 
@@ -168,9 +170,13 @@ else:
     box_y = array([Ymin , Ymin , Ymax , Ymax , Ymin])
 
 A = A[ (abs(A[:,2])<=0.2) & (abs(A[:,3])<=0.1) , :]
-min_disp = n.min( pdist(A[:,[2,3,4]]) )
+min_disp = n.sort(pdist(A[:,[2,3,4]]))[:8].mean()
 SS_th = (min_disp/thickness)
-FS_th = FS / SS * (min_disp/thickness)
+FS_th = FS / SS * SS_th
+fid = open('facet_size.dat', 'w')
+fid.write('#[0] FS/to, [1] SS/to \n')
+fid.write('{:.3f}, {:.3f}'.format(FS_th, SS_th))
+fid.close()
 
 #Definition of the size of the averaging zone for grid method
 size_av = Size_Scott - thickness * FS_th
@@ -261,6 +267,7 @@ profUr = n.empty( (201,len(profStg)+1) )    # First col. for y-coord, first row 
 L = n.zeros(last+1)                   #For delta/L
 up_th = n.zeros(last+1)               #For phi
 lo_th = n.zeros(last+1)               #For phi
+passingpts = {}
 
 #Cycle through the stages
 z=1
@@ -281,8 +288,13 @@ for k in range(last,-1,-1):
         export_mean[k] = [STF[k,0], 0, STF[k,1], STF[k,2], STF[k,3], 0,0,0,0,0,0,0]
         export_stdv[k] = [STF[k,0], 0, STF[k,1], STF[k,2], STF[k,3], 0,0,0,0,0,0,0]
         export_Scott[k] = [STF[k,0], 0, STF[k,1], STF[k,2], STF[k,3], 0,0,0,0,0,0,0]
+        if savePassing:
+            data = passingpts['stage_1'].copy()
+            data[:,2:] = 1, 0, 0, 1
+            passingpts['stage_0'] = data
     else:
         LEp, NEx, NEy, NExy, gamma, xcoord, ycoord, aramX, aramY, NEx_alt, NEy_alt, gamma_alt = ( [] for _ in range(12) )
+        passingA = []
         scot_count=0                #Count the number of points in the Scott method
         if BIN:
             A = n.load('{}/{}{:.0f}.npy'.format(arampath,prefix,k))
@@ -310,7 +322,7 @@ for k in range(last,-1,-1):
         colNEx_alt = F[:,0,0]-1
         colNEy_alt = F[:,1,1]-1
         colG_alt=n.arctan(F[:,0,1]/F[:,1,1]);
-                
+        
         # What we have effectively done is created an additional column for each data point.
         # Now I just need to sort though those which are in passable columns
         
@@ -330,9 +342,11 @@ for k in range(last,-1,-1):
                 NEx_alt.append( colNEx_alt[rng][locLEp] )
                 NEy_alt.append( colNEy_alt[rng][locLEp] )
                 gamma_alt.append( colG_alt[rng][locLEp] )
+                passingA.append( Abox[rng][locLEp] )
 
         LEp, NEx, NEy, gamma, xcoord, ycoord, aramX, aramY = map(array,[LEp, NEx, NEy, gamma, xcoord, ycoord, aramX, aramY])    #Convert lists to arrays
         NEx_alt, NEy_alt, gamma_alt = map(array,[NEx_alt, NEy_alt, gamma_alt])
+        passingA = n.array(passingA)
         ratio = NEy / gamma
         ratioAvg = nanmean(ratio)
         ratioSDEV = nanstd(ratio)
@@ -353,6 +367,8 @@ for k in range(last,-1,-1):
         ycoord=ycoord[passed]
         aramX = aramX[passed]
         aramY = aramY[passed]
+        if savePassing:
+            passingpts['stage_{}'.format(k)] = passingA[passed][:,[0,1,8,9,10,11]]
                 
         ## Max 10 stages and identify I,J of max point in last
         locmax = n.argmax( LEp )
@@ -532,6 +548,8 @@ n.savetxt('Max10.dat',X=MaxTen,fmt='%.6f, %.0f, %.0f, %.6f, %.6f',header=headerl
 # Save the radial contraction
 headerline = 'First Row Stage number.  Second row begin data.\n[0]Ycoord [1:] Stage Ur/Ro'
 n.savetxt('RadialContraction.dat',X=profUr,fmt = '%.6f',delimiter=',',header=headerline)
+if savePassing:
+    savemat('{}_PassingPts.mat'.format(proj), passingpts)
 
 # Save profiles (takes some work)
 maxprolen = 0
