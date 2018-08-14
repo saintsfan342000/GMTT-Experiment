@@ -14,7 +14,7 @@ exporthead = 'Stage, AxSts(nom), ShSts(nom), Delta/L, Phi, eemax, e01max, e11max
 exporthead = exporthead.split(',')
 #So I just need to open LV_DIC and InSGZone
 
-expts = ['10_FS19SS6']
+expts = ['3_FS19SS6']
 
 for k,X in enumerate(expts):
 
